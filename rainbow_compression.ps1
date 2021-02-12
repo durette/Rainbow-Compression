@@ -20,12 +20,14 @@ ForEach ($compression_algorithm In $compression_algorithms) {
         $output_file="$($input_file)_$($i).7z"
         7z a "-mx=$($compression_level)" "-mf=$($executable_compression)" "-mhc=$($header_compression)" "-m0=$($compression_algorithm)" "$($output_file)" "$($input_file)"
         $i=$i+1
+        If ($i -Ge 2) {
+          # Doing the deletion inside the loop slows it down, but it keeps the disk space in check
+          $output_files = Get-ChildItem "$($input_file)_*.7z" | Sort-Object Length
+          $file_to_keep,$files_to_delete=$output_files
+          $file_to_keep | Rename-Item -NewName "$($input_file).7z"
+          $files_to_delete | Remove-Item
+        }
       }
     }
   }
 }
-
-$output_files = Get-ChildItem "$($input_file)_*.7z" | Sort-Object Length
-$file_to_keep,$files_to_delete=$output_files
-$file_to_keep | Rename-Item -NewName "$($input_file).7z"
-$files_to_delete | Remove-Item
